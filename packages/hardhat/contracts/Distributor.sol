@@ -21,17 +21,17 @@ contract Distributor is AntiSybilize, Ownable {
     constructor(address _proofOfHumanity) AntiSybilize(_proofOfHumanity) {}
 
     function claim(address token, address receiver) public {
-        _verifyAndEffect(token, receiver);
+        _verifyAndEffect(receiver);
         uint256 claimAmount = dropParam.dropAmountPerUser;
         uint256 balance = IERC20(token).balanceOf(address(this));
         require(claimAmount >= balance, "insufficient-amount-of-token");
 
-        IERC20(token).safeTansfer(receiver, claimAmount);
+        IERC20(token).safeTransfer(receiver, claimAmount);
     }
 
     function setDropAmountPerUser(uint256 amountPerUser) public onlyOwner {
-        require(amountPerUser > 0,"amount-zero");
-        dropPara.dropAmountPerUser = amountPerUser;
+        require(amountPerUser > 0, "amount-zero");
+        dropParam.dropAmountPerUser = amountPerUser;
     }
 
     function setDrop(
@@ -46,10 +46,10 @@ contract Distributor is AntiSybilize, Ownable {
         require(startTimestamp > block.timestamp && endTimestamp > startTimestamp, "invalid-timestamp");
 
         dropParam = DropParam({
-            startTimestamp: startTimeStamp,
+            startTimestamp: startTimestamp,
             endTimestamp: endTimestamp,
             dropAmountPerUser: dropAmountPerUser
         });
-        IERC20(token).safeTansferFrom(msg.sender, address(this), amount);
+        IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
     }
 }
