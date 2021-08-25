@@ -51,7 +51,7 @@
     "backend": "cd packages/backend && node index",
     "format": "yarn workspace @scaffold-eth/hardhat format && yarn workspace @scaffold-eth/react-app format",
     "lint:fix": "yarn workspace @scaffold-eth/react-app lint:fix",
-    "lint":  "yarn workspace @scaffold-eth/react-app lint"
+    "lint": "yarn workspace @scaffold-eth/react-app lint"
   },
   "workspaces": {
     "packages": [

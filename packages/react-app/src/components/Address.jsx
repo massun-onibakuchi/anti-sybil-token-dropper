@@ -1,8 +1,8 @@
 import React from "react";
 import Blockies from "react-blockies";
 import { Typography, Skeleton } from "antd";
-import { useLookupAddress } from "../hooks";
 import { useThemeSwitcher } from "react-css-theme-switcher";
+import { useLookupAddress } from "../hooks";
 
 // changed value={address} to address={address}
 
@@ -65,7 +65,7 @@ export default function Address(props) {
       <span style={{ verticalAlign: "middle" }}>
         <a
           style={{ color: currentTheme == "light" ? "#222222" : "#ddd" }}
-          target={"_blank"}
+          target="_blank"
           href={etherscanLink}
           rel="noopener noreferrer"
         >
@@ -81,7 +81,7 @@ export default function Address(props) {
       <Text editable={{ onChange: props.onChange }} copyable={{ text: address }}>
         <a
           style={{ color: currentTheme == "light" ? "#222222" : "#ddd" }}
-          target={"_blank"}
+          target="_blank"
           href={etherscanLink}
           rel="noopener noreferrer"
         >
@@ -94,7 +94,7 @@ export default function Address(props) {
       <Text copyable={{ text: address }}>
         <a
           style={{ color: currentTheme == "light" ? "#222222" : "#ddd" }}
-          target={"_blank"}
+          target="_blank"
           href={etherscanLink}
           rel="noopener noreferrer"
         >

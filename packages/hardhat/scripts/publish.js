@@ -13,7 +13,7 @@ function publishContract(contractName) {
             .toString();
         const address = fs.readFileSync(`${bre.config.paths.artifacts}/${contractName}.address`).toString();
         contract = JSON.parse(contract);
-        let graphConfigPath = `${graphDir}/config/config.json`;
+        const graphConfigPath = `${graphDir}/config/config.json`;
         let graphConfig;
         try {
             if (fs.existsSync(graphConfigPath)) {

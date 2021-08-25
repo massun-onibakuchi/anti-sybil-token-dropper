@@ -89,13 +89,16 @@
     "eject": "react-scripts eject",
     "start": "react-scripts start",
     "test": "react-scripts test",
-    "lint": "eslint --config ./.eslintrc.js --ignore-path ./.eslintignore ./src/**/*",
     "ipfs": "node ./scripts/ipfs.js",
     "surge": "surge ./build",
     "s3": "node ./scripts/s3.js",
     "ship": "yarn surge",
     "theme": "npx gulp less",
     "watch": "node ./scripts/watch.js",
-    "format": "prettier --write ./src/**/*.{js,jsx} && yarn prettier --write prettier --write ./src/**/*.js"
+    "format": "yarn lint:prettier --write",
+    "lint": "eslint --config ./.eslintrc.js --ignore-path ./.eslintignore ./src/**/*",
+    "lint:fix": "yarn lint:prettier --write && yarn lint:eslint --fix",
+    "lint:eslint": "eslint './{src,test}/**/*.{js,jsx}'",
+    "lint:prettier": "yarn prettier './{src,scripts}/**/*.{js,jsx}'"
   }
 }

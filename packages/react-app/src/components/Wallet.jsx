@@ -4,12 +4,13 @@ import { Tooltip, Spin, Modal, Button, Typography } from "antd";
 import QR from "qrcode.react";
 import { parseEther } from "@ethersproject/units";
 import { useUserAddress } from "eth-hooks";
+import { ethers } from "ethers";
 import { Transactor } from "../helpers";
 import Address from "./Address";
 import Balance from "./Balance";
 import AddressInput from "./AddressInput";
 import EtherInput from "./EtherInput";
-import { ethers } from "ethers";
+
 const { Text, Paragraph } = Typography;
 
 /*
@@ -111,8 +112,8 @@ export default function Wallet(props) {
       </Button>
     );
   } else if (pk) {
-    let pk = localStorage.getItem("metaPrivateKey");
-    let wallet = new ethers.Wallet(pk);
+    const pk = localStorage.getItem("metaPrivateKey");
+    const wallet = new ethers.Wallet(pk);
 
     if (wallet.address !== selectedAddress) {
       display = (
@@ -121,28 +122,27 @@ export default function Wallet(props) {
         </div>
       );
     } else {
-      let extraPkDisplayAdded = {};
-      let extraPkDisplay = [];
+      const extraPkDisplayAdded = {};
+      const extraPkDisplay = [];
       extraPkDisplayAdded[wallet.address] = true;
       extraPkDisplay.push(
         <div style={{ fontSize: 16, padding: 2, backgroundStyle: "#89e789" }}>
           <a href={"/pk#" + pk}>
-            <Address minimized={true} address={wallet.address} ensProvider={props.ensProvider} />{" "}
-            {wallet.address.substr(0, 6)}
+            <Address minimized address={wallet.address} ensProvider={props.ensProvider} /> {wallet.address.substr(0, 6)}
           </a>
         </div>,
       );
-      for (var key in localStorage) {
+      for (const key in localStorage) {
         if (key.indexOf("metaPrivateKey_backup") >= 0) {
           console.log(key);
-          let pastpk = localStorage.getItem(key);
-          let pastwallet = new ethers.Wallet(pastpk);
-          if (!extraPkDisplayAdded[pastwallet.address] /*&& selectedAddress!=pastwallet.address*/) {
+          const pastpk = localStorage.getItem(key);
+          const pastwallet = new ethers.Wallet(pastpk);
+          if (!extraPkDisplayAdded[pastwallet.address] /* && selectedAddress!=pastwallet.address */) {
             extraPkDisplayAdded[pastwallet.address] = true;
             extraPkDisplay.push(
               <div style={{ fontSize: 16 }}>
                 <a href={"/pk#" + pastpk}>
-                  <Address minimized={true} address={pastwallet.address} ensProvider={props.ensProvider} />{" "}
+                  <Address minimized address={pastwallet.address} ensProvider={props.ensProvider} />{" "}
                   {pastwallet.address.substr(0, 6)}
                 </a>
               </div>,
@@ -170,10 +170,10 @@ export default function Wallet(props) {
           </i>
           <QR
             value={"https://xdai.io/" + pk}
-            size={"450"}
-            level={"H"}
-            includeMargin={true}
-            renderAs={"svg"}
+            size="450"
+            level="H"
+            includeMargin
+            renderAs="svg"
             imageSettings={{ excavate: false }}
           />
 
@@ -187,7 +187,7 @@ export default function Wallet(props) {
               {extraPkDisplay}
               <Button
                 onClick={() => {
-                  let currentPrivateKey = window.localStorage.getItem("metaPrivateKey");
+                  const currentPrivateKey = window.localStorage.getItem("metaPrivateKey");
                   if (currentPrivateKey) {
                     window.localStorage.setItem("metaPrivateKey_backup" + Date.now(), currentPrivateKey);
                   }

@@ -18,7 +18,7 @@ import useOnBlock from "./OnBlock";
   - If no pollTime is passed, the balance will update on every new block
 */
 
-let DEBUG = false;
+const DEBUG = false;
 
 export default function useBalance(provider, address, pollTime = 0) {
   const [balance, setBalance] = useState();

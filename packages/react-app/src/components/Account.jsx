@@ -1,9 +1,9 @@
 import React from "react";
 import { Button } from "antd";
+import { useThemeSwitcher } from "react-css-theme-switcher";
 import Address from "./Address";
 import Balance from "./Balance";
 import Wallet from "./Wallet";
-import { useThemeSwitcher } from "react-css-theme-switcher";
 
 /*
   ~ What it does? ~
@@ -77,7 +77,7 @@ export default function Account({
           type={minimized ? "default" : "primary"}
           onClick={loadWeb3Modal}
         >
-          {connectText ? connectText : "connect"}
+          {connectText || "connect"}
         </Button>,
       );
     }
