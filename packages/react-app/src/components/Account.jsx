@@ -77,7 +77,7 @@ export default function Account({
           type={minimized ? "default" : "primary"}
           onClick={loadWeb3Modal}
         >
-          {connectText?connectText:"connect"}
+          {connectText ? connectText : "connect"}
         </Button>,
       );
     }
@@ -89,15 +89,25 @@ export default function Account({
     ""
   ) : (
     <span>
-      {address ? <Address address={address} ensProvider={mainnetProvider} blockExplorer={blockExplorer} /> : "Connecting..."}
+      {address ? (
+        <Address address={address} ensProvider={mainnetProvider} blockExplorer={blockExplorer} />
+      ) : (
+        "Connecting..."
+      )}
       <Balance address={address} provider={localProvider} price={price} />
-      <Wallet address={address} provider={userProvider} ensProvider={mainnetProvider} price={price} color={currentTheme == "light" ? "#1890ff" : "#2caad9"} />
+      <Wallet
+        address={address}
+        provider={userProvider}
+        ensProvider={mainnetProvider}
+        price={price}
+        color={currentTheme == "light" ? "#1890ff" : "#2caad9"}
+      />
     </span>
   );
 
   return (
     <div>
-      {onlyShowButton?"":display}
+      {onlyShowButton ? "" : display}
       {modalButtons}
     </div>
   );

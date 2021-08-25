@@ -5,7 +5,7 @@ import { PageHeader } from "antd";
 
 export default function Header() {
   return (
-    <a href="/" >
+    <a href="/">
       <PageHeader
         title="🔏 Sign in with Web3"
         subTitle="Sign a message with your wallet to log in..."
