@@ -12,12 +12,17 @@ contract Collectible is ERC721URIStorage, AntiSybilize, Ownable {
     uint256 public startTimestamp;
 
     function claim(uint256 tokenId) public {
+        require(startTimestamp > block.timestamp, "before-start-timestamp");
         _verifyAndEffect(msg.sender);
         safeTransferFrom(address(this), msg.sender, tokenId);
     }
 
     function mint(uint256 tokenId, string memory _tokenURI) public onlyOwner {
         _mint(address(this), tokenId);
+        _setTokenURI(tokenId, _tokenURI);
+    }
+
+    function setTokenURI(uint256 tokenId, string memory _tokenURI) public onlyOwner {
         _setTokenURI(tokenId, _tokenURI);
     }
 

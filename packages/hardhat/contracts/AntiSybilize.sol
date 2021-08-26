@@ -18,7 +18,7 @@ abstract contract AntiSybilize {
     }
 
     function _verifyUserClaimable(address receiver) internal view {
-        require(userClaimed[receiver], "can-not-claim-twice"); // receiver can't claim twice
+        require(!userClaimed[receiver], "can-not-claim-twice"); // receiver can't claim twice
         require(IProofOfHumanity(proofOfHumanity).isRegistered(receiver), "proof-of-humanity-not-registered"); // check whether a user is registered
     }
 
