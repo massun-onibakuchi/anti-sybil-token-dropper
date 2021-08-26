@@ -19,26 +19,38 @@ contract Distributor is AntiSybilize, Ownable {
     address public token;
     DropParam public dropParam;
 
+    event Withdraw(address receiver, uint256 amount);
+    event SetDrop(address token, uint256 amount, uint256 startTimestamp, uint256 endTimestamp, uint256 amountPerUser);
+    event Claimed(address user, uint256 amount);
+
     constructor(address _proofOfHumanity) AntiSybilize(_proofOfHumanity) {}
 
     function claim(address receiver) public {
         DropParam memory param = dropParam;
-        require(param.startTimestamp > block.timestamp, "before-claim-start");
-        require(param.endTimestamp < block.timestamp, "after-claim-start");
+        require(block.timestamp > param.startTimestamp, "before-claim-start");
+        require(param.endTimestamp > block.timestamp, "after-claim-start");
         _verifyAndEffect(receiver);
 
         uint256 claimAmount = param.dropAmountPerUser;
         uint256 balance = IERC20(token).balanceOf(address(this));
-        require(claimAmount >= balance, "insufficient-amount-of-token");
+        require(balance >= claimAmount, "insufficient-amount-of-token");
 
         IERC20(token).safeTransfer(receiver, claimAmount);
+        emit Claimed(receiver, claimAmount);
     }
 
     function setDropAmountPerUser(uint256 amountPerUser) public onlyOwner {
         DropParam memory param = dropParam;
         require(amountPerUser > (param.dropAmountPerUser * 8) / 10, "amount-too-small");
-        require(block.timestamp > (param.startTimestamp + param.endTimestamp) / 2, "");
+        require(block.timestamp > (param.startTimestamp + param.endTimestamp) / 2, "cooling-period");
         dropParam.dropAmountPerUser = amountPerUser;
+        emit SetDrop(
+            token,
+            IERC20(token).balanceOf(address(this)),
+            param.startTimestamp,
+            param.endTimestamp,
+            amountPerUser
+        );
     }
 
     function withdraw() public onlyOwner {
@@ -46,6 +58,7 @@ contract Distributor is AntiSybilize, Ownable {
         uint256 balance = IERC20(token).balanceOf(address(this));
         require(balance > 0, "amount-zero");
         IERC20(token).safeTransfer(owner(), balance);
+        emit Withdraw(owner(), balance);
     }
 
     function setDrop(
@@ -66,5 +79,6 @@ contract Distributor is AntiSybilize, Ownable {
             dropAmountPerUser: _dropAmountPerUser
         });
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
+        emit SetDrop(_token, _amount, _startTimestamp, _endTimestamp, _dropAmountPerUser);
     }
 }
