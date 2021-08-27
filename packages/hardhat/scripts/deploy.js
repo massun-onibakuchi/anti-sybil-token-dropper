@@ -7,13 +7,35 @@ const R = require("ramda");
 
 const main = async () => {
     console.log("\n\n 📡 Deploying...\n");
-
-    const yourContract = await deploy("YourContract"); // <-- add in constructor args like line 19 vvvv
+    const [owner] = await ethers.getSigners();
 
     // const yourContract = await ethers.getContractAt('YourContract', "0xaAC799eC2d00C013f1F11c37E654e59B0429DF6A") //<-- if you want to instantiate a version of a contract at a specific address!
     // const secondContract = await deploy("SecondContract")
+    const yourContract = await deploy("YourContract"); // <-- add in constructor args like line 19 vvvv
+    const tokenMock = await deploy("ERC20Mock");
+    const proofOfHumanity = await deploy("ProofOfHumanityMock");
+    const collectibe = await deploy("Collectible", [proofOfHumanity.address]);
+    const distributor = await deploy("Distributor", [proofOfHumanity.address]);
 
-    // const exampleToken = await deploy("ExampleToken")
+    await tokenMock.setDecimals(18);
+    await tokenMock.mint(owner.address, utils.parseEther("100"));
+    await tokenMock.connect(owner).approve(distributor.address, utils.parseEther("100"));
+
+    await distributor
+        .connect(owner)
+        .setDrop(
+            tokenMock.address,
+            utils.parseEther("10"),
+            Math.floor(Date.now() / 1000 + 30),
+            Math.floor(Date.now() / 1000 + 3600),
+            utils.parseEther("1"),
+        );
+
+    await collectibe.connect(owner).mint(0, "");
+    await collectibe.connect(owner).mint(1, "");
+    await collectibe.connect(owner).setStartTime(Math.floor(Date.now() / 1000 + 30));
+
+    await owner.sendTransaction({ to: "0x94eE9662A3573Bb52716a9e695A7f7f33Caa8B3F", value: utils.parseEther("1") });
     // const examplePriceOracle = await deploy("ExamplePriceOracle")
     // const smartContractWallet = await deploy("SmartContractWallet",[exampleToken.address,examplePriceOracle.address])
 

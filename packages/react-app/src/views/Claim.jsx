@@ -1,52 +1,69 @@
 /* eslint-disable jsx-a11y/accessible-emoji */
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button, List, Divider, Input, Card, DatePicker, Slider, Switch, Progress, Spin } from "antd";
 import { SyncOutlined } from "@ant-design/icons";
+import { formatEther, formatUnits } from "@ethersproject/units";
 import { Address, Balance } from "../components";
-import { parseEther, formatEther, formatUnits } from "@ethersproject/units";
 import { useContractReader } from "../hooks";
 
 export default function Claim({
-  claimEvents,
-  tokenName,
-  contractName,
   address,
   mainnetProvider,
   userProvider,
   localProvider,
   userEthBalance,
+  contractName,
   userTokenBalance,
+  claimEvents,
   tx,
   readContracts,
   writeContracts,
 }) {
-  const isEligible = useContractReader(readContracts, "Distributor", "userClaimed", [address]);
+  const isClaimed = useContractReader(readContracts, "Distributor", "userClaimed", [address]);
   const param = useContractReader(readContracts, "Distributor", "dropParam", [], 3600000);
-  const totalSupply = useContractReader(readContracts, ContractName, "totalSupply", [], 3600000);
-  const decimals = useContractReader(readContracts, ContractName, "decimals", [], 3600000);
-  console.log("decimals :>> ", decimals);
-
   const [owner, setOwner] = useState();
-  const [metadata, setDroppedTokenMetadata] = useState({ tokenName, decimals, totalSupply });
+  const [metadata, setDroppedTokenMetadata] = useState({ tokenName: "", decimals: 18, totalSupply: 0 });
+
+  let startDateText = ``;
+  let endDateText = ``;
+  if (param) {
+    const startDate = new Date(param.startTimestamp.toNumber() * 1000);
+    const endDate = new Date(param.endTimestamp.toNumber() * 1000);
+    startDateText = `${startDate.toLocaleDateString()} ${startDate.toLocaleTimeString()}`;
+    endDateText = `${endDate.toLocaleDateString()} ${endDate.toLocaleTimeString()}`;
+  }
+
+  console.log("metadata :>> ", metadata);
 
   useEffect(() => {
     const updateMetadata = async () => {
+      // let _data = [];
       let _owner;
       const metadata = { tokenName: "", decimals: 0, totalSupply: 0 };
       try {
         _owner = await readContracts.Distributor.owner();
-        metadata._totalSupply = await readContracts[ContractName].totalSupply();
-        metadata._name = await readContracts[ContractName].name();
-        metadata._decimals = await readContracts[ContractName].decimals();
+        metadata.tokenName = await readContracts[contractName].name();
+        metadata.totalSupply = await readContracts[contractName].totalSupply();
+        metadata.decimals = await readContracts[contractName].decimals();
+        // const data = await Promise.allSettled([
+        //   await readContracts[contractName].name(),
+        //   await readContracts[contractName].totalSupply(),
+        //   await readContracts[contractName].decimals(),
+        // ]);
       } catch (e) {
         console.log(e);
       }
       setOwner(_owner);
       setDroppedTokenMetadata(metadata);
+      // setDroppedTokenMetadata({
+      //   tokenName: _data[0],
+      //   decimals: _data[1],
+      //   totalSupply: _data[2],
+      // });
     };
-    updateMetadata();
-  }, []);
+    updateMetadata().catch(() => updateMetadata()); // retry
+  }, [readContracts, contractName]);
 
   return (
     <div>
@@ -89,8 +106,8 @@ export default function Claim({
           Owner:
           <Address address={owner} ensProvider={mainnetProvider} fontSize={14} />
         </div>
-        <div>Start Time: {param ? new Date(param.startTimestamp.toNumber() * 1000).toLocaleTimeString() : 0} </div>
-        <div>Ent Time:{param ? new Date(param.endTimestamp.toNumber() * 1000).toLocaleTimeString() : 0} </div>
+        <div>Start Time: {startDateText}</div>
+        <div>Ent Time:{endDateText}</div>
         <div>Your claimable amount: {param ? formatUnits(param.dropAmountPerUser) : 0}</div>
         <Divider />
         <div style={{ margin: 8 }}>
@@ -99,12 +116,14 @@ export default function Claim({
               tx(writeContracts.Distributor.claim(address));
             }}
             disabled={
-              (!param && !isEligible) ||
-              (param.startTimestamp.toNumber() > Date.now() && param.endTimestamp.toNumber() < Date.now())
+              (!param && !isClaimed) ||
+              param.startTimestamp.toNumber() > Date.now() ||
+              param.endTimestamp.toNumber() < Date.now()
             }
           >
             Claim {metadata.tokenName} token
           </Button>
+          {isClaimed && <div style={{ margin: 6 }}>You can not claim twice</div>}
         </div>
       </div>
 
@@ -115,9 +134,11 @@ export default function Claim({
           dataSource={claimEvents}
           renderItem={item => {
             return (
-              <List.Item key={item.blockNumber + "_" + item.user + "_" + item.amount}>
-                <Address address={item[0]} ensProvider={mainnetProvider} fontSize={16} /> =>
-                {item[1]}
+              <List.Item
+                key={item.blockNumber + "_" + item.user + "_" + formatUnits(item.amount, metadata.decimals.toString())}
+              >
+                <Address address={item[0]} ensProvider={mainnetProvider} fontSize={16} />:
+                {formatUnits(item[1], metadata.decimals.toString())}
               </List.Item>
             );
           }}

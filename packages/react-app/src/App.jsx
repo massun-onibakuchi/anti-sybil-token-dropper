@@ -23,7 +23,7 @@ import {
 import { Header, Account, Faucet, Ramp, Contract, GasGauge, ThemeSwitch } from "./components";
 import { Transactor } from "./helpers";
 // import Hints from "./Hints";
-import { Hints, ExampleUI, Claim, Subgraph } from "./views";
+import { Claim } from "./views";
 import { INFURA_ID, DAI_ADDRESS, DAI_ABI, NETWORK, NETWORKS } from "./constants";
 
 const axios = require("axios");
@@ -132,7 +132,7 @@ function App(props) {
 
   // 📟 Listen for broadcast events
   const setPurposeEvents = useEventListener(readContracts, "YourContract", "SetPurpose", localProvider, 1);
-  const claimEvents = useEventListener(readContracts, "Distributor", "Claim", localProvider, 1);
+  const claimEvents = useEventListener(readContracts, "Distributor", "Claimed", localProvider, 1);
 
   /*
   const addressFromENS = useResolveName(mainnetProvider, "austingriffith.eth");
@@ -399,7 +399,7 @@ function App(props) {
           </Route>
           <Route path="/claim">
             <Claim
-              tokenName="ERC20Mock"
+              contractName="ERC20Mock"
               address={address}
               userProvider={userProvider}
               claimEvents={claimEvents}
