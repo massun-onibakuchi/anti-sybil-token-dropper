@@ -1,1 +1,1 @@
-module.exports = ["Collectible","Distributor","ERC20Mock","ProofOfHumanityMock","YourContract"];
+module.exports = ["Collectible", "Distributor", "ERC20Mock", "ProofOfHumanityMock", "YourContract"];
