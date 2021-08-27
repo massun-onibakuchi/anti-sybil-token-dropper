@@ -1,10 +1,9 @@
 /* eslint-disable jsx-a11y/accessible-emoji */
 
 import React, { useState, useEffect } from "react";
-import { Button, List, Divider, Input, Card, DatePicker, Slider, Switch, Progress, Spin } from "antd";
-import { SyncOutlined } from "@ant-design/icons";
+import { Button, List, Divider } from "antd";
 import { formatEther, formatUnits } from "@ethersproject/units";
-import { Address, Balance } from "../components";
+import { Address, ButtonClaimSelf, ButtonClaimRequest } from "../components";
 import { useContractReader } from "../hooks";
 
 export default function Claim({
@@ -19,10 +18,12 @@ export default function Claim({
   tx,
   readContracts,
   writeContracts,
+  serverUrl,
 }) {
-  const isClaimed = useContractReader(readContracts, "Distributor", "userClaimed", [address]);
+  const isClaimed = useContractReader(readContracts, "Distributor", "userClaimed", [address], 15 * 1000);
   const param = useContractReader(readContracts, "Distributor", "dropParam", [], 3600000);
-  const [owner, setOwner] = useState();
+  const [owner, setOwner] = useState("");
+  const [disabled, setDisable] = useState(false);
   const [metadata, setDroppedTokenMetadata] = useState({ tokenName: "", decimals: 18, totalSupply: 0 });
 
   let startDateText = ``;
@@ -34,36 +35,33 @@ export default function Claim({
     endDateText = `${endDate.toLocaleDateString()} ${endDate.toLocaleTimeString()}`;
   }
 
-  console.log("metadata :>> ", metadata);
-
   useEffect(() => {
     const updateMetadata = async () => {
-      // let _data = [];
       let _owner;
-      const metadata = { tokenName: "", decimals: 0, totalSupply: 0 };
+      const _metadata = { tokenName: "", decimals: 0, totalSupply: 0 };
       try {
         _owner = await readContracts.Distributor.owner();
-        metadata.tokenName = await readContracts[contractName].name();
-        metadata.totalSupply = await readContracts[contractName].totalSupply();
-        metadata.decimals = await readContracts[contractName].decimals();
-        // const data = await Promise.allSettled([
-        //   await readContracts[contractName].name(),
-        //   await readContracts[contractName].totalSupply(),
-        //   await readContracts[contractName].decimals(),
-        // ]);
+        _metadata.tokenName = await readContracts[contractName].name();
+        _metadata.totalSupply = await readContracts[contractName].totalSupply();
+        _metadata.decimals = await readContracts[contractName].decimals();
       } catch (e) {
         console.log(e);
       }
       setOwner(_owner);
-      setDroppedTokenMetadata(metadata);
-      // setDroppedTokenMetadata({
-      //   tokenName: _data[0],
-      //   decimals: _data[1],
-      //   totalSupply: _data[2],
-      // });
+      setDroppedTokenMetadata(_metadata);
     };
-    updateMetadata().catch(() => updateMetadata()); // retry
+    updateMetadata();
   }, [readContracts, contractName]);
+
+  useEffect(() => {
+    setDisable(
+      () =>
+        !param ||
+        isClaimed ||
+        param.startTimestamp.toNumber() > Date.now() / 1000 ||
+        param.endTimestamp.toNumber() < Date.now() / 1000,
+    );
+  }, [param, isClaimed]);
 
   return (
     <div>
@@ -84,16 +82,7 @@ export default function Claim({
             fontSize={16}
           />
         </div>
-        <div>
-          Total supply:{" "}
-          {metadata.totalSupply && metadata.decimals
-            ? formatUnits(metadata.totalSupply, metadata.decimals.toString())
-            : "..."}
-        </div>
-        <div>
-          Your token Balance:{" "}
-          {userTokenBalance && metadata.decimals ? formatUnits(userTokenBalance, metadata.decimals.toString()) : "..."}
-        </div>
+        <div>Your token Balance: {formatUnits(userTokenBalance || 0, metadata.decimals.toString())}</div>
         <Divider />
         <h2>Distributor Contract</h2>
         Address:
@@ -111,18 +100,14 @@ export default function Claim({
         <div>Your claimable amount: {param ? formatUnits(param.dropAmountPerUser) : 0}</div>
         <Divider />
         <div style={{ margin: 8 }}>
-          <Button
-            onClick={() => {
-              tx(writeContracts.Distributor.claim(address));
-            }}
-            disabled={
-              (!param && !isClaimed) ||
-              param.startTimestamp.toNumber() > Date.now() ||
-              param.endTimestamp.toNumber() < Date.now()
-            }
-          >
-            Claim {metadata.tokenName} token
-          </Button>
+          <ButtonClaimRequest
+            address={address}
+            distributorAddress={readContracts.Distributor.address}
+            disabled={disabled}
+            metadata={metadata}
+            userProvider={userProvider}
+            serverUrl={serverUrl}
+          />
           {isClaimed && <div style={{ margin: 6 }}>You can not claim twice</div>}
         </div>
       </div>
