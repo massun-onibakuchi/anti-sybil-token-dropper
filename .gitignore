@@ -11,6 +11,8 @@ packages/hardhat/artifacts
 packages/hardhat/deployments
 packages/react-app/src/contracts/*
 !packages/react-app/src/contracts/contracts.js
+packages/backend/contracts/*
+!packages/backend/contracts/contracts.js
 packages/hardhat/cache
 
 docker/**/data

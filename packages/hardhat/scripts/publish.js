@@ -2,10 +2,10 @@ const fs = require("fs");
 const chalk = require("chalk");
 const bre = require("hardhat");
 
-const publishDir = "../react-app/src/contracts";
+const publishDirs = ["../react-app/src/contracts", "../backend/contracts"];
 const graphDir = "../subgraph";
 
-function publishContract(contractName) {
+function publishContract(contractName, publishDir) {
     console.log(" 💽 Publishing", chalk.cyan(contractName), "to", chalk.gray(publishDir));
     try {
         let contract = fs
@@ -55,20 +55,23 @@ function publishContract(contractName) {
 }
 
 async function main() {
-    if (!fs.existsSync(publishDir)) {
-        fs.mkdirSync(publishDir);
-    }
-    const finalContractList = [];
-    fs.readdirSync(bre.config.paths.sources).forEach(file => {
-        if (file.indexOf(".sol") >= 0) {
-            const contractName = file.replace(".sol", "");
-            // Add contract to list if publishing is successful
-            if (publishContract(contractName)) {
-                finalContractList.push(contractName);
-            }
+    // eslint-disable-next-line no-restricted-syntax
+    for (const publishDir of publishDirs) {
+        if (!fs.existsSync(publishDir)) {
+            fs.mkdirSync(publishDir);
         }
-    });
-    fs.writeFileSync(`${publishDir}/contracts.js`, `module.exports = ${JSON.stringify(finalContractList)};`);
+        const finalContractList = [];
+        fs.readdirSync(bre.config.paths.sources).forEach(file => {
+            if (file.indexOf(".sol") >= 0) {
+                const contractName = file.replace(".sol", "");
+                // Add contract to list if publishing is successful
+                if (publishContract(contractName, publishDir)) {
+                    finalContractList.push(contractName);
+                }
+            }
+        });
+        fs.writeFileSync(`${publishDir}/contracts.js`, `module.exports = ${JSON.stringify(finalContractList)};`);
+    }
 }
 main()
     .then(() => process.exit(0))

@@ -3,7 +3,7 @@ import { BrowserRouter, Switch, Route, Link } from "react-router-dom";
 import "antd/dist/antd.css";
 import { StaticJsonRpcProvider, JsonRpcProvider, Web3Provider } from "@ethersproject/providers";
 import "./App.css";
-import { message, Row, Col, Button, Menu, Alert, Switch as SwitchD } from "antd";
+import { Button, Menu, Alert, Switch as SwitchD } from "antd";
 import Web3Modal from "web3modal";
 import WalletConnectProvider from "@walletconnect/web3-provider";
 import { useUserAddress } from "eth-hooks";
@@ -20,10 +20,10 @@ import {
   useExternalContractLoader,
   useOnBlock,
 } from "./hooks";
-import { Header, Account, Faucet, Ramp, Contract, GasGauge, ThemeSwitch } from "./components";
+import { Header, Account, ThemeSwitch } from "./components";
 import { Transactor } from "./helpers";
 // import Hints from "./Hints";
-import { Hints, ExampleUI, Subgraph } from "./views";
+import { Claim } from "./views";
 import { INFURA_ID, DAI_ADDRESS, DAI_ABI, NETWORK, NETWORKS } from "./constants";
 
 const axios = require("axios");
@@ -50,16 +50,16 @@ const axios = require("axios");
 const serverUrl = "http://localhost:49832/";
 
 /// 📡 What chain are your contracts deployed to?
-const targetNetwork = NETWORKS.mainnet; // <------- select your target frontend network (localhost, rinkeby, xdai, mainnet)
+const targetNetwork = NETWORKS.localhost; // <------- select your target frontend network (localhost, rinkeby, xdai, mainnet)
 
 // 😬 Sorry for all the console logging
-const DEBUG = true;
+const DEBUG = false;
 
 // 🛰 providers
 if (DEBUG) console.log("📡 Connecting to Mainnet Ethereum");
 // const mainnetProvider = getDefaultProvider("mainnet", { infura: INFURA_ID, etherscan: ETHERSCAN_KEY, quorum: 1 });
 // const mainnetProvider = new InfuraProvider("mainnet",INFURA_ID);
-//
+
 // attempt to connect to our own scaffold eth rpc and if that fails fall back to infura...
 // Using StaticJsonRpcProvider as the chainId won't change see https://github.com/ethers-io/ethers.js/issues/901
 const scaffoldEthProvider = new StaticJsonRpcProvider("https://rpc.scaffoldeth.io:48544");
@@ -108,10 +108,10 @@ function App(props) {
   // const yourMainnetBalance = useBalance(mainnetProvider, address);
 
   // Load in your local 📝 contract and read a value from it:
-  // const readContracts = useContractLoader(localProvider)
+  const readContracts = useContractLoader(localProvider);
 
   // If you want to make 🔐 write transactions to your contracts, use the userProvider:
-  // const writeContracts = useContractLoader(userProvider)
+  const writeContracts = useContractLoader(userProvider);
 
   // EXTERNAL CONTRACT EXAMPLE:
   //
@@ -127,10 +127,10 @@ function App(props) {
   //  const myMainnetDAIBalance = useContractReader({DAI: mainnetDAIContract},"DAI", "balanceOf",["0x34aA3F359A9D614239015126635CE7732c18fDF3"])
 
   // keep track of a variable from the contract in the local React state:
-  // const purpose = useContractReader(readContracts,"YourContract", "purpose")
+  const erc20TokenBalance = useContractReader(readContracts, "ERC20Mock", "balanceOf", [address]);
 
   // 📟 Listen for broadcast events
-  // const setPurposeEvents = useEventListener(readContracts, "YourContract", "SetPurpose", localProvider, 1);
+  const claimEvents = useEventListener(readContracts, "Distributor", "Claimed", localProvider, 1);
 
   /*
   const addressFromENS = useResolveName(mainnetProvider, "austingriffith.eth");
@@ -146,7 +146,9 @@ function App(props) {
       mainnetProvider &&
       address &&
       selectedChainId &&
-      yourLocalBalance /* &&  yourMainnetBalance &&readContracts && writeContracts && mainnetDAIContract */
+      yourLocalBalance &&
+      writeContracts &&
+      readContracts /* &&  yourMainnetBalance  && mainnetDAIContract */
     ) {
       console.log("_____________________________________ 🏗 scaffold-eth _____________________________________");
       console.log("🌎 mainnetProvider", mainnetProvider);
@@ -154,16 +156,19 @@ function App(props) {
       console.log("👩‍💼 selected address:", address);
       console.log("🕵🏻‍♂️ selectedChainId:", selectedChainId);
       console.log("💵 yourLocalBalance", yourLocalBalance ? formatEther(yourLocalBalance) : "...");
+      console.log("📝 readContracts", readContracts);
+      console.log("🔐 writeContracts", writeContracts);
       /* console.log("💵 yourMainnetBalance",yourMainnetBalance?formatEther(yourMainnetBalance):"...") */
-      /*  console.log("📝 readContracts",readContracts) */
       /* console.log("🌍 DAI contract on mainnet:",mainnetDAIContract) */
-      /*  console.log("🔐 writeContracts",writeContracts) */
     }
   }, [
     mainnetProvider,
     address,
     selectedChainId,
-    yourLocalBalance /* yourMainnetBalance, readContracts, writeContracts, mainnetDAIContract */,
+    yourLocalBalance,
+    writeContracts,
+    readContracts,
+    /* yourMainnetBalance, mainnetDAIContract */
   ]);
 
   let networkDisplay = "";
@@ -239,77 +244,7 @@ function App(props) {
 
   const isSigner = injectedProvider && injectedProvider.getSigner && injectedProvider.getSigner()._isSigner;
 
-  const [loading, setLoading] = useState();
-
-  const [result, setResult] = useState();
-
-  let display = "";
-  if (result) {
-    let possibleTxId = result.substr(-66);
-    console.log("possibleTxId", possibleTxId);
-    let extraLink = "";
-    if (possibleTxId.indexOf("0x") == 0) {
-      extraLink = (
-        <a href={blockExplorer + "tx/" + possibleTxId} target="_blank">
-          view transaction on etherscan
-        </a>
-      );
-    } else {
-      possibleTxId = "";
-    }
-    display = (
-      <div style={{ marginTop: 32 }}>
-        {result.replace(possibleTxId, "")} {extraLink}
-      </div>
-    );
-  } else if (isSigner) {
-    display = (
-      <Button
-        loading={loading}
-        style={{ marginTop: 32 }}
-        type="primary"
-        onClick={async () => {
-          setLoading(true);
-          try {
-            const msgToSign = await axios.get(serverUrl);
-            console.log("msgToSign", msgToSign);
-            if (msgToSign.data && msgToSign.data.length > 32) {
-              // <--- traffic escape hatch?
-              let currentLoader = setTimeout(() => {
-                setLoading(false);
-              }, 4000);
-              const message = msgToSign.data.replace("**ADDRESS**", address);
-              const sig = await userProvider.send("personal_sign", [message, address]);
-              clearTimeout(currentLoader);
-              currentLoader = setTimeout(() => {
-                setLoading(false);
-              }, 4000);
-              console.log("sig", sig);
-              const res = await axios.post(serverUrl, {
-                address,
-                message,
-                signature: sig,
-              });
-              clearTimeout(currentLoader);
-              setLoading(false);
-              console.log("RESULT:", res);
-              if (res.data) {
-                setResult(res.data);
-              }
-            } else {
-              setLoading(false);
-              setResult("😅 Sorry, the server is overloaded. Please try again later. ⏳");
-            }
-          } catch (e) {
-            message.error(" Sorry, the server is overloaded. 🧯🚒🔥");
-            console.log("FAILED TO GET...");
-          }
-        }}
-      >
-        <span style={{ marginRight: 8 }}>🔏</span> sign a message with your ethereum wallet
-      </Button>
-    );
-  }
+  const serverUrl = "http://localhost:49832/";
 
   return (
     <div className="App">
@@ -317,70 +252,40 @@ function App(props) {
       <Header />
 
       {networkDisplay}
-      {/*
 
       <BrowserRouter>
-
-        <Menu style={{ textAlign:"center" }} selectedKeys={[route]} mode="horizontal">
-          <Menu.Item key="/">
-            <Link onClick={()=>{setRoute("/")}} to="/">Mainnet DAI</Link>
-          </Menu.Item>
-          <Menu.Item key="/hints">
-            <Link onClick={()=>{setRoute("/hints")}} to="/hints">Hints</Link>
-          </Menu.Item>
-          <Menu.Item key="/exampleui">
-            <Link onClick={()=>{setRoute("/exampleui")}} to="/exampleui">ExampleUI</Link>
-          </Menu.Item>
-          <Menu.Item key="/subgraph">
-            <Link onClick={()=>{setRoute("/subgraph")}} to="/subgraph">Subgraph</Link>
+        <Menu style={{ textAlign: "center" }} selectedKeys={[route]} mode="horizontal">
+          <Menu.Item key="/claim">
+            <Link
+              onClick={() => {
+                setRoute("/claim");
+              }}
+              to="/claim"
+            >
+              Claim
+            </Link>
           </Menu.Item>
         </Menu>
-
-
         <Switch>
-          <Route exact path="/">
-
-            <Contract
-              name="DAI"
-              customContract={mainnetDAIContract}
-              signer={userProvider.getSigner()}
-              provider={mainnetProvider}
-              address={address}
-              blockExplorer={"https://etherscan.io/"}
-            />
-
-
-          </Route>
-          <Route path="/hints">
-            <Hints
-              address={address}
-              yourLocalBalance={yourLocalBalance}
-              mainnetProvider={mainnetProvider}
-              price={price}
-            />
-          </Route>
-          <Route path="/exampleui">
-            <ExampleUI
+          <Route path="/claim">
+            <Claim
+              contractName="ERC20Mock"
               address={address}
               userProvider={userProvider}
+              claimEvents={claimEvents}
               mainnetProvider={mainnetProvider}
               localProvider={localProvider}
-              yourLocalBalance={yourLocalBalance}
-              price={price}
+              userEthBalance={yourLocalBalance}
+              userTokenBalance={erc20TokenBalance}
               tx={tx}
-            />
-          </Route>
-          <Route path="/subgraph">
-            <Subgraph
-            subgraphUri={props.subgraphUri}
-            tx={tx}
-            mainnetProvider={mainnetProvider}
+              readContracts={readContracts}
+              writeContracts={writeContracts}
+              serverUrl={serverUrl}
             />
           </Route>
         </Switch>
-
       </BrowserRouter>
-      */}
+
       <ThemeSwitch />
 
       {/* 👨‍💼 Your account is in the top right with a wallet at connect options */}
@@ -400,8 +305,6 @@ function App(props) {
         />
         {faucetHint}
       </div>
-
-      {display}
 
       {/* 🗺 Extra UI like gas price, eth price, faucet, and support:
        <div style={{ position: "fixed", textAlign: "left", left: 0, bottom: 20, padding: 10 }}>
