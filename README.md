@@ -1,15 +1,23 @@
-# 🏗 scaffold-eth - 🔏 sign in with web3 example
+# anti-sybil-token-drop
+This repo uses 🏗 scaffold-eth - 🔏 sign in with web3 example
 
+## Concept
+Airdrops of tokens and nft are common. However, these airdrops are often conducted by individuals with multiple addresses, and are often bought up or minted by a small number of participants. As a countermeasure, there is a launch pad that distributes tokens according to the amount of tokens locked in advance, but this also favors a small number of whales. The method I propose here is to use Proofof humanity so that only accounts registered as individuals can be minted or claimed only once. We also transfer tokens from the backend for participants with small amounts who are hesitant to pay for gas.
+
+## How it works
 > Ask users to sign a message with their web3 wallet and recover it in a backend service
 
+> If the user has not claimed yet, we will send the token to them.
+
+## Setup
 ---
 
 ```bash
-git clone https://github.com/austintgriffith/scaffold-eth.git sign-in-with-web3
+git clone https://github.com/austintgriffith/scaffold-eth.git anti-sybil-token-drop
 
-cd sign-in-with-web3
+cd anti-sybil-token-drop
 
-git checkout sign-in-with-web3
+git checkout anti-sybil-token-drop
 ```
 
 ```bash
@@ -19,16 +27,24 @@ yarn install
 ```
 
 ```bash
+yarn chain
+```
+
+```bash
+yarn deploy
+```
+
+```bash
 
 yarn start
 
 ```
 
 > start the backend service that listens for and verifies signatures:
-
+get a private key which is provided `yarn chain` and set `PK`
 ```bash
 
-yarn backend
+PK=<Private Key> yarn backend 
 
 ```
 
