@@ -18,11 +18,15 @@ abstract contract AntiSybilize {
     }
 
     function _verifyUserClaimable(address receiver) internal view {
-        require(!userClaimed[receiver], "can-not-claim-twice"); // receiver can't claim twice
         require(IProofOfHumanity(proofOfHumanity).isRegistered(receiver), "proof-of-humanity-not-registered"); // check whether a user is registered
+        require(!userClaimed[receiver], "can-not-claim-twice"); // receiver can't claim twice
     }
 
-    function isRegistered(address account) public view {
-        IProofOfHumanity(proofOfHumanity).isRegistered(account);
+    function isRegistered(address account) public view returns (bool) {
+        return IProofOfHumanity(proofOfHumanity).isRegistered(account);
+    }
+
+    function isClaimable(address account) external view returns (bool) {
+        return isRegistered(account) && !userClaimed[account];
     }
 }

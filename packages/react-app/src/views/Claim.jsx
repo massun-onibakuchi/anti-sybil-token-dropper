@@ -20,6 +20,7 @@ export default function Claim({
   writeContracts,
   serverUrl,
 }) {
+  const isRegistered = useContractReader(readContracts, "Distributor", "isRegistered", [address], 15 * 1000);
   const isClaimed = useContractReader(readContracts, "Distributor", "userClaimed", [address], 15 * 1000);
   const param = useContractReader(readContracts, "Distributor", "dropParam", [], 3600000);
   const [owner, setOwner] = useState("");
@@ -33,6 +34,12 @@ export default function Claim({
     const endDate = new Date(param.endTimestamp.toNumber() * 1000);
     startDateText = `${startDate.toLocaleDateString()} ${startDate.toLocaleTimeString()}`;
     endDateText = `${endDate.toLocaleDateString()} ${endDate.toLocaleTimeString()}`;
+  }
+  let message = "";
+  if (!isRegistered) {
+    message = "You need to register as a person with Proof of Humanity";
+  } else if (isClaimed) {
+    message = "You can not claim twice";
   }
 
   useEffect(() => {
@@ -57,6 +64,7 @@ export default function Claim({
     setDisable(
       () =>
         !param ||
+        !isRegistered ||
         isClaimed ||
         param.startTimestamp.toNumber() > Date.now() / 1000 ||
         param.endTimestamp.toNumber() < Date.now() / 1000,
@@ -79,7 +87,7 @@ export default function Claim({
           <Address
             address={readContracts ? readContracts[contractName].address : readContracts}
             ensProvider={mainnetProvider}
-            fontSize={16}
+            fontSize={14}
           />
         </div>
         <div>Your token Balance: {formatUnits(userTokenBalance || 0, metadata.decimals.toString())}</div>
@@ -108,7 +116,7 @@ export default function Claim({
             userProvider={userProvider}
             serverUrl={serverUrl}
           />
-          {isClaimed && <div style={{ margin: 6 }}>You can not claim twice</div>}
+          <div style={{ margin: 6 }}>{message}</div>
         </div>
       </div>
 

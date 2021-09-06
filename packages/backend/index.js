@@ -20,9 +20,6 @@ const localhost = {
 
 const localProvider = new ethers.providers.StaticJsonRpcProvider(localhost.rpcUrl);
 
-// const INFURA = JSON.parse(fs.readFileSync("./infura.txt").toString().trim());
-// const PK = fs.readFileSync("./pk.txt").toString().trim();
-// let wallet = new ethers.Wallet(PK, new ethers.providers.InfuraProvider("goerli", INFURA));
 if (!process.env.PK) throw Error("process.env.PK " + process.env.PK);
 const wallet = new ethers.Wallet(process.env.PK, localProvider);
 console.log(wallet.address);
@@ -44,20 +41,31 @@ app.get("/", function (req, res) {
 app.post("/", async function (request, response) {
     const ip = request.headers["x-forwarded-for"] || request.connection.remoteAddress;
     console.log("POST from ip address:", ip, request.body.message);
-    if (
-        request.body.message !=
-        currentMessage
-            .replace("**ADDRESS**", request.body.address)
-            .replace("**DISTRIBUTOR**", request.body.distributorAddress)
-    ) {
-        response.send(" ⚠️ Secret message mismatch!?! Please reload and try again. Sorry! 😅");
-    } else {
+    try {
+        // isAddress
+        if (!ethers.utils.isAddress(request.body.address)) {
+            response.send("invalid address 😅");
+        }
+        // is correct distributor address
         if (DISTRIBUTOR_ADDRESS !== request.body.distributorAddress) {
             response.send(" Distributor contract address mismatch!? 😅");
         }
+        // is signature valid
+        if (
+            request.body.message !=
+            currentMessage
+                .replace("**ADDRESS**", request.body.address)
+                .replace("**DISTRIBUTOR**", request.body.distributorAddress)
+        ) {
+            response.send(" ⚠️ Secret message mismatch!?! Please reload and try again. Sorry! 😅");
+        }
+        const distributor = new ethers.Contract(DISTRIBUTOR_ADDRESS, DISTRIBUTOR_ABI, localProvider);
+        const isClaimable = await distributor.isClaimable(request.body.address);
         const recovered = ethers.utils.verifyMessage(request.body.message, request.body.signature);
+        if (!isClaimable) {
+            response.send("You are not claimable");
+        }
         if (recovered == request.body.address) {
-            const distributor = new ethers.Contract(DISTRIBUTOR_ADDRESS, DISTRIBUTOR_ABI);
             distributor
                 .connect(wallet)
                 .claim(request.body.address)
@@ -69,6 +77,9 @@ app.post("/", async function (request, response) {
                     response.send("transaction fail");
                 });
         }
+    } catch (err) {
+        console.log("err :>> ", err);
+        response.send("Some error has occurred😅");
     }
 });
 
