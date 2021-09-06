@@ -36,49 +36,15 @@ const main = async () => {
     await collectibe.connect(owner).setStartTime(Math.floor(Date.now() / 1000 + 30));
 
     await owner.sendTransaction({ to: "0x94eE9662A3573Bb52716a9e695A7f7f33Caa8B3F", value: utils.parseEther("1") });
-    // const examplePriceOracle = await deploy("ExamplePriceOracle")
-    // const smartContractWallet = await deploy("SmartContractWallet",[exampleToken.address,examplePriceOracle.address])
-
-    /*
-  //If you want to send value to an address from the deployer
-  const deployerWallet = ethers.provider.getSigner()
-  await deployerWallet.sendTransaction({
-    to: "0x34aA3F359A9D614239015126635CE7732c18fDF3",
-    value: ethers.utils.parseEther("0.001")
-  })
-  */
-
-    /*
-  //If you want to send some ETH to a contract on deploy (make your constructor payable!)
-  const yourContract = await deploy("YourContract", [], {
-  value: ethers.utils.parseEther("0.05")
-  });
-  */
-
-    /*
-  //If you want to link a library into your contract:
-  // reference: https://github.com/austintgriffith/scaffold-eth/blob/using-libraries-example/packages/hardhat/scripts/deploy.js#L19
-  const yourContract = await deploy("YourContract", [], {}, {
-   LibraryName: **LibraryAddress**
-  });
-  */
-
-    // If you want to verify your contract on tenderly.co (see setup details in the scaffold-eth README!)
-    /*
-  await tenderlyVerify(
-    {contractName: "YourContract",
-     contractAddress: yourContract.address
-  })
-  */
 
     // If you want to verify your contract on etherscan
     /*
-  console.log(chalk.blue('verifying on etherscan'))
-  await run("verify:verify", {
-    address: yourContract.address,
-    // constructorArguments: args // If your contract has constructor arguments, you can pass them as an array
-  })
-  */
+        console.log(chalk.blue('verifying on etherscan'))
+        await run("verify:verify", {
+            address: yourContract.address,
+            // constructorArguments: args // If your contract has constructor arguments, you can pass them as an array
+        })
+    */
 
     console.log(
         " 💾  Artifacts (address, abi, and args) saved to: ",
